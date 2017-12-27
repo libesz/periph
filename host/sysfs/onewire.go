@@ -37,18 +37,39 @@ func newOnewire(busNumber int) (*Onewire, error) {
 
 const w1MastersPrefix = "/sys/devices/w1_bus_master"
 
-//TODO: pullup setting is ignored
 func (o *Onewire) Tx(w, r []byte, power onewire.Pullup) error {
 	if len(w) < 9 || w[0] != 0x55 {
 		return fmt.Errorf("not a valid device selection")
 	}
-	deviceDir, _ := addressToDirName(onewire.Address(binary.LittleEndian.Uint64(w[1:9])))
-	endPointPath := w1MastersPrefix + strconv.Itoa(o.busNumber) + "/" + deviceDir + "/rw"
-	f, err := os.OpenFile(endPointPath, os.O_WRONLY, 0)
+	//Set pullup
+	pullupPath := w1MastersPrefix + strconv.Itoa(o.busNumber) + "/w1_master_pullup"
+	var toPullupFile byte = '1'
+	if power == onewire.StrongPullup {
+		toPullupFile = '0'
+	}
+	f, err := os.OpenFile(pullupPath, os.O_WRONLY, 0)
 	if err != nil {
 		return err
 	}
-	n, err := f.Write(w[9:])
+	n, err := f.Write([]byte{toPullupFile})
+	if n < 1 {
+		return fmt.Errorf("pullup write incomplete")
+	}
+	if err != nil {
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	//Write w to device rw interface
+	deviceDir, _ := addressToDirName(onewire.Address(binary.LittleEndian.Uint64(w[1:9])))
+	endPointPath := w1MastersPrefix + strconv.Itoa(o.busNumber) + "/" + deviceDir + "/rw"
+	f, err = os.OpenFile(endPointPath, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	n, err = f.Write(w[9:])
 	if n < len(w[9:]) {
 		return fmt.Errorf("write incomplete")
 	}
@@ -59,6 +80,8 @@ func (o *Onewire) Tx(w, r []byte, power onewire.Pullup) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
+
+	//Read the device buffer to r
 	f, err = os.OpenFile(endPointPath, os.O_RDONLY, 0)
 	if err != nil {
 		return err
