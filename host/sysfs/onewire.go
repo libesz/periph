@@ -55,6 +55,7 @@ func (o *Onewire) Tx(w, r []byte, power onewire.Pullup) error {
 	if n < 1 {
 		return fmt.Errorf("pullup write incomplete")
 	}
+	//fmt.Println("Pullup set to: ", string(toPullupFile))
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func (o *Onewire) Tx(w, r []byte, power onewire.Pullup) error {
 	if n < len(w[9:]) {
 		return fmt.Errorf("write incomplete")
 	}
-	// fmt.Println("device <- *", w[9:], "*")
+	//fmt.Printf("device <- %x\n", w[9:])
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (o *Onewire) Tx(w, r []byte, power onewire.Pullup) error {
 		return err
 	}
 	_, err = f.Read(r)
-	// fmt.Println("device -> *", r, "*")
+	//fmt.Printf("device -> %x\n", r)
 	if err != nil {
 		return err
 	}
