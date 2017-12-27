@@ -123,9 +123,9 @@ func (o *Onewire) Search(alarmOnly bool) ([]onewire.Address, error) {
 // device directory name as linux creates
 // 0xCR04170328afff28 -> "28-04170328afff"
 func addressToDirName(a onewire.Address) (string, error) {
-	dump := fmt.Sprintf("%#x", a)
+	dump := fmt.Sprintf("%016x", a)
 	family := dump[len(dump)-2:]
-	deviceID := dump[4 : len(dump)-2]
+	deviceID := dump[2 : len(dump)-2]
 	result := family + "-" + deviceID
 
 	return result, nil
